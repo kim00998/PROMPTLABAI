@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptLab.id — Dashboard Belajar Prompt AI</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12141c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PromptLab">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141c;
+    --bg-2:#181b26;
+    --surface:#1e2230;
+    --surface-2:#262b3d;
+    --border:#333a4f;
+    --text:#eef0f5;
+    --text-muted:#9aa3ba;
+    --accent-image:#ffb454;
+    --accent-image-soft:rgba(255,180,84,0.13);
+    --accent-video:#5ee6d0;
+    --accent-video-soft:rgba(94,230,208,0.13);
+    --accent-materi:#b39ddb;
+    --accent-materi-soft:rgba(179,157,219,0.13);
+    --accent-logo:#f2c94c;
+    --accent-logo-soft:rgba(242,201,76,0.13);
+    --radius:14px;
+    --sidebar-w:264px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:radial-gradient(1200px 800px at 85% -10%, #1b2033 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  h1,h2,h3,.brand,.nav-item,.stat-num{font-family:'Space Grotesk', sans-serif;}
+  code, .mono, .prompt-text{font-family:'JetBrains Mono', monospace;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  ::selection{background:var(--accent-image); color:#12141c;}
+
+  /* ---------- LAYOUT ---------- */
+  .app{display:flex; min-height:100vh;}
+  .sidebar{
+    width:var(--sidebar-w);
+    flex-shrink:0;
+    background:var(--bg-2);
+    border-right:1px solid var(--border);
+    padding:28px 18px;
+    position:fixed;
+    top:0; left:0; bottom:0;
+    display:flex; flex-direction:column;
+    z-index:50;
+    transition:transform .25s ease;
+  }
+  .brand{display:flex; align-items:center; gap:10px; padding:0 8px 26px; font-weight:700; font-size:19px; letter-spacing:.2px;}
+  .brand-mark{
+    width:34px; height:34px; border-radius:9px;
+    background:conic-gradient(from 220deg, var(--accent-image), var(--accent-video), var(--accent-materi), var(--accent-image));
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; color:#12141c; font-weight:700;
+  }
+  .brand small{display:block; font-family:'Inter'; font-weight:500; font-size:11.5px; color:var(--text-muted); letter-spacing:.4px;}
+
+  nav.nav{display:flex; flex-direction:column; gap:4px; margin-top:6px;}
+  .nav-item{
+    display:flex; align-items:center; gap:12px;
+    padding:11px 12px; border-radius:10px;
+    color:var(--text-muted); font-size:14.5px; font-weight:500;
+    background:transparent; border:1px solid transparent; text-align:left; width:100%;
+  }
+  .nav-item svg{width:18px; height:18px; flex-shrink:0;}
+  .nav-item:hover{background:var(--surface); color:var(--text);}
+  .nav-item.active{background:var(--surface-2); color:var(--text); border-color:var(--border);}
+  .nav-item.active .dot{background:var(--accent-image);}
+
+  .sidebar-foot{margin-top:auto; padding:14px 12px; border-top:1px solid var(--border); font-size:11.5px; color:var(--text-muted); line-height:1.6;}
+
+  .menu-toggle{
+    display:none; position:fixed; top:16px; left:16px; z-index:60;
+    background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+    width:40px; height:40px; border-radius:10px; align-items:center; justify-content:center;
+  }
+
+  main{
+    margin-left:var(--sidebar-w);
+    flex:1; padding:40px 44px 80px;
+    max-width:1180px;
+  }
+
+  .view{display:none; animation:fadeIn .35s ease;}
+  .view.active{display:block;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .eyebrow{font-size:12.5px; text-transform:uppercase; letter-spacing:1.5px; color:var(--accent-image); font-weight:600; margin-bottom:10px;}
+  h1.page-title{font-size:32px; font-weight:700; margin-bottom:8px; letter-spacing:-.3px;}
+  .page-sub{color:var(--text-muted); font-size:15px; max-width:640px; line-height:1.6; margin-bottom:34px;}
+
+  /* ---------- DASHBOARD ---------- */
+  .stat-grid{display:grid; grid-template-columns:repeat(5, 1fr); gap:16px; margin-bottom:34px;}
+  .stat-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px; position:relative; overflow:hidden;
+  }
+  .stat-card::after{content:""; position:absolute; right:-30px; top:-30px; width:100px; height:100px; border-radius:50%; opacity:.12; background:var(--accent-image);}
+  .stat-card.video::after{background:var(--accent-video);}
+  .stat-card.materi::after{background:var(--accent-materi);}
+  .stat-card.logo::after{background:var(--accent-logo);}
+  .stat-num{font-size:30px; font-weight:700;}
+  .stat-label{font-size:13px; color:var(--text-muted); margin-top:4px;}
+
+  .dash-grid{display:grid; grid-template-columns:1.3fr 1fr; gap:20px; margin-bottom:30px;}
+  .panel{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px;}
+  .panel h3{font-size:16px; margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+
+  .progress-ring-wrap{display:flex; align-items:center; gap:22px;}
+  .ring{
+    width:110px; height:110px; border-radius:50%;
+    background:conic-gradient(var(--accent-image) calc(var(--pct,0) * 1%), var(--surface-2) 0);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .ring-inner{width:82px; height:82px; border-radius:50%; background:var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .ring-inner b{font-size:20px;}
+  .ring-inner span{font-size:10.5px; color:var(--text-muted);}
+
+  .quick-list{display:flex; flex-direction:column; gap:10px;}
+  .quick-item{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:10px;
+    padding:13px 16px; font-size:14px; font-weight:500;
+  }
+  .quick-item .badge{font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;}
+  .badge.img{background:var(--accent-image-soft); color:var(--accent-image);}
+  .badge.vid{background:var(--accent-video-soft); color:var(--accent-video);}
+  .badge.mat{background:var(--accent-materi-soft); color:var(--accent-materi);}
+  .badge.logo{background:var(--accent-logo-soft); color:var(--accent-logo);}
+  .goto-btn{
+    background:var(--surface); border:1px solid var(--border); color:var(--text);
+    padding:7px 13px; border-radius:8px; font-size:12.5px; font-weight:600;
+  }
+  .goto-btn:hover{border-color:var(--accent-image); color:var(--accent-image);}
+
+  .howitworks{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
+  .how-step{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px;}
+  .how-step .n{font-size:12px; color:var(--accent-image); font-weight:700; margin-bottom:8px;}
+  .how-step p{font-size:13.5px; color:var(--text-muted); line-height:1.5; margin-top:6px;}
+  .how-step h4{font-size:14.5px; font-weight:600;}
+
+  /* ---------- MATERI ---------- */
+  .materi-list{display:flex; flex-direction:column; gap:12px;}
+  .materi-item{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;}
+  .materi-head{display:flex; align-items:center; gap:14px; padding:18px 20px; cursor:pointer;}
+  .materi-check{
+    width:22px; height:22px; border-radius:6px; border:1.5px solid var(--border); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:13px; color:transparent;
+  }
+  .materi-check.done{background:var(--accent-materi); border-color:var(--accent-materi); color:#12141c;}
+  .materi-num{font-size:12px; color:var(--text-muted); font-weight:600; width:26px; flex-shrink:0;}
+  .materi-title{flex:1; font-weight:600; font-size:15px;}
+  .materi-caret{color:var(--text-muted); transition:transform .2s ease; flex-shrink:0;}
+  .materi-item.open .materi-caret{transform:rotate(90deg);}
+  .materi-body{max-height:0; overflow:hidden; transition:max-height .3s ease;}
+  .materi-item.open .materi-body{max-height:600px;}
+  .materi-body-in{padding:0 20px 20px 60px; color:var(--text-muted); font-size:14px; line-height:1.7;}
+  .materi-body-in ol{padding-left:18px; display:flex; flex-direction:column; gap:6px;}
+  .materi-body-in .example{
+    margin-top:12px; background:var(--bg-2); border:1px solid var(--border); border-radius:8px;
+    padding:10px 12px; font-size:12.5px; color:var(--text);
+  }
+
+  /* ---------- PROMPT SECTIONS ---------- */
+  .toolbar{display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap; align-items:center;}
+  .search-box{
+    flex:1; min-width:200px; background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    display:flex; align-items:center; gap:8px; padding:10px 14px;
+  }
+  .search-box input{background:transparent; border:none; outline:none; color:var(--text); font-size:14px; width:100%;}
+  .search-box svg{width:16px; height:16px; color:var(--text-muted); flex-shrink:0;}
+  select.filter-select{
+    background:var(--surface); border:1px solid var(--border); color:var(--text);
+    border-radius:10px; padding:10px 14px; font-size:13.5px; outline:none;
+  }
+  .section-progress{font-size:12.5px; color:var(--text-muted); white-space:nowrap;}
+  .section-progress b{color:var(--text);}
+
+  .card-grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:16px;}
+  .prompt-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px; display:flex; flex-direction:column; gap:12px; transition:border-color .2s ease;
+  }
+  .prompt-card.tested{border-color:var(--accent-image);}
+  .card-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+  .card-title-wrap{display:flex; gap:10px; align-items:flex-start;}
+  .card-no{font-size:11.5px; color:var(--text-muted); font-weight:700; padding-top:2px;}
+  .card-title{font-size:15.5px; font-weight:600; margin-bottom:4px;}
+  .card-tag{display:inline-block; font-size:10.5px; padding:2px 8px; border-radius:20px; font-weight:600; letter-spacing:.2px;}
+  .card-tag.img{background:var(--accent-image-soft); color:var(--accent-image);}
+  .card-tag.vid{background:var(--accent-video-soft); color:var(--accent-video);}
+  .card-tag.logo{background:var(--accent-logo-soft); color:var(--accent-logo);}
+
+  .prompt-box{
+    background:var(--bg-2); border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; font-size:12.5px; line-height:1.65; color:#dfe2ea; position:relative;
+  }
+  .card-tools{font-size:12px; color:var(--text-muted);}
+  .card-tools b{color:var(--text);}
+  .card-tip{font-size:12.5px; color:var(--text-muted); line-height:1.5; border-left:2px solid var(--border); padding-left:10px;}
+
+  .card-actions{display:flex; gap:8px; margin-top:2px;}
+  .btn{
+    flex:1; padding:9px 10px; border-radius:9px; font-size:12.5px; font-weight:600;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn:hover{border-color:var(--accent-image);}
+  .btn.copied{background:var(--accent-image); color:#12141c; border-color:var(--accent-image);}
+  .btn.mark{border-color:var(--border);}
+  .btn.mark.on{background:var(--accent-image-soft); color:var(--accent-image); border-color:var(--accent-image);}
+  .btn svg{width:14px; height:14px;}
+
+  .empty-state{text-align:center; padding:60px 20px; color:var(--text-muted);}
+
+  footer.page-footer{margin-top:50px; padding-top:22px; border-top:1px solid var(--border); font-size:12.5px; color:var(--text-muted);}
+
+  @media (max-width: 980px){
+    .dash-grid{grid-template-columns:1fr;}
+    .howitworks{grid-template-columns:repeat(2,1fr);}
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .stat-grid .stat-card:last-child{grid-column:span 2;}
+    .card-grid{grid-template-columns:1fr;}
+  }
+  @media (max-width: 760px){
+    .sidebar{transform:translateX(-100%);}
+    .sidebar.open{transform:translateX(0);}
+    .menu-toggle{display:flex;}
+    main{margin-left:0; padding:80px 18px 60px;}
+    .howitworks{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<button class="menu-toggle" id="menuToggle" aria-label="Buka menu">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+</button>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">P</div><div>PromptLab<small>Dashboard AI Tools</small></div></div>
+    <nav class="nav" id="navList">
+      <button class="nav-item active" data-target="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-target="materi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Materi &amp; Cara-cara
+      </button>
+      <button class="nav-item" data-target="prompt-gambar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Prompt Gambar AI
+      </button>
+      <button class="nav-item" data-target="prompt-video">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5.5" width="14" height="13" rx="2"/><path d="M21.5 8l-5 3 5 3z"/></svg>
+        Prompt Video AI
+      </button>
+      <button class="nav-item" data-target="prompt-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+        Prompt Logo Premium
+      </button>
+    </nav>
+    <button id="installAppBtn" onclick="triggerInstall()" style="display:none; align-items:center; justify-content:center; gap:8px; margin:4px 8px 10px; padding:11px; border-radius:10px; background:var(--accent-image); color:#12141c; font-weight:700; font-size:13px; border:none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+      Install Aplikasi
+    </button>
+    <div class="sidebar-foot">
+      Semua prompt di sini bisa langsung disalin dan diuji coba di tools AI favoritmu (Midjourney, DALL·E, Runway, Kling, dll).
+    </div>
+  </aside>
+
+  <main>
+    <!-- ================= DASHBOARD ================= -->
+    <section class="view active" id="view-dashboard">
+      <div class="eyebrow">Dashboard</div>
+      <h1 class="page-title">Halo, siap eksplor AI hari ini?</h1>
+      <p class="page-sub">Satu tempat untuk belajar cara membuat prompt yang efektif, lalu langsung mempraktekkan 60 contoh prompt gambar, video &amp; logo AI yang sudah teruji.</p>
+
+      <div class="stat-grid">
+        <div class="stat-card image"><div class="stat-num">20</div><div class="stat-label">Contoh prompt gambar AI</div></div>
+        <div class="stat-card video"><div class="stat-num">20</div><div class="stat-label">Contoh prompt video AI</div></div>
+        <div class="stat-card logo"><div class="stat-num">20</div><div class="stat-label">Contoh prompt logo premium</div></div>
+        <div class="stat-card materi"><div class="stat-num">8</div><div class="stat-label">Modul materi &amp; cara-cara</div></div>
+        <div class="stat-card"><div class="stat-num" id="dashTestedNum">0/60</div><div class="stat-label">Prompt sudah dicoba</div></div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="panel">
+          <h3>Progres belajarmu</h3>
+          <div class="progress-ring-wrap">
+            <div class="ring" id="progressRing" style="--pct:0">
+              <div class="ring-inner"><b id="ringPct">0%</b><span>selesai</span></div>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+              <div class="quick-item"><span>Materi ditandai selesai</span><span class="badge mat" id="materiDoneBadge">0/8</span></div>
+              <div class="quick-item"><span>Prompt gambar diuji</span><span class="badge img" id="imgTestedBadge">0/20</span></div>
+              <div class="quick-item"><span>Prompt video diuji</span><span class="badge vid" id="vidTestedBadge">0/20</span></div>
+              <div class="quick-item"><span>Prompt logo diuji</span><span class="badge logo" id="logoTestedBadge">0/20</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Mulai dari sini</h3>
+          <div class="quick-list">
+            <div class="quick-item"><span>Pelajari cara membuat prompt</span><button class="goto-btn" data-target="materi">Buka Materi</button></div>
+            <div class="quick-item"><span>Coba 20 prompt gambar AI</span><button class="goto-btn" data-target="prompt-gambar">Buka Prompt</button></div>
+            <div class="quick-item"><span>Coba 20 prompt video AI</span><button class="goto-btn" data-target="prompt-video">Buka Prompt</button></div>
+            <div class="quick-item"><span>Coba 20 prompt logo premium</span><button class="goto-btn" data-target="prompt-logo">Buka Prompt</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Alur praktek yang disarankan</h3>
+        <div class="howitworks">
+          <div class="how-step"><div class="n">01</div><h4>Baca formulanya</h4><p>Pahami dulu struktur prompt yang efektif lewat menu Materi.</p></div>
+          <div class="how-step"><div class="n">02</div><h4>Pilih contoh prompt</h4><p>Buka menu Prompt Gambar atau Prompt Video, pilih yang sesuai kebutuhanmu.</p></div>
+          <div class="how-step"><div class="n">03</div><h4>Salin ke tools AI</h4><p>Klik tombol Salin, tempel ke Midjourney, DALL·E, Runway, atau Kling.</p></div>
+          <div class="how-step"><div class="n">04</div><h4>Tandai teruji &amp; modifikasi</h4><p>Tandai sebagai teruji, lalu ubah detail sesuai kebutuhanmu sendiri.</p></div>
+        </div>
+      </div>
+
+      <footer class="page-footer">PromptLab.id — dashboard latihan prompt AI. Progres tersimpan sementara selama sesi ini berlangsung di browser.</footer>
+    </section>
+
+    <!-- ================= MATERI ================= -->
+    <section class="view" id="view-materi">
+      <div class="eyebrow">Materi &amp; Cara-cara</div>
+      <h1 class="page-title">Panduan praktis membuat prompt AI</h1>
+      <p class="page-sub">Delapan modul singkat yang menjelaskan cara menyusun prompt gambar &amp; video AI yang efektif — lengkap dengan contoh yang bisa langsung dipakai.</p>
+      <div class="materi-list" id="materiList"></div>
+    </section>
+
+    <!-- ================= PROMPT GAMBAR ================= -->
+    <section class="view" id="view-prompt-gambar">
+      <div class="eyebrow">Praktek</div>
+      <h1 class="page-title">20 Contoh Prompt Gambar AI</h1>
+      <p class="page-sub">Setiap prompt sudah dalam format siap pakai untuk Midjourney, DALL·E, atau Stable Diffusion. Salin, coba, lalu tandai kalau sudah kamu uji.</p>
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" id="searchImg" placeholder="Cari prompt gambar, mis. 'portrait', 'anime'...">
+        </div>
+        <select class="filter-select" id="filterImg"></select>
+        <div class="section-progress"><b id="imgProgressText">0/20</b> sudah diuji</div>
+      </div>
+      <div class="card-grid" id="gridImg"></div>
+    </section>
+
+    <!-- ================= PROMPT VIDEO ================= -->
+    <section class="view" id="view-prompt-video">
+      <div class="eyebrow">Praktek</div>
+      <h1 class="page-title">20 Contoh Prompt Video AI</h1>
+      <p class="page-sub">Format prompt siap pakai untuk Runway, Pika, Kling, atau Sora. Sesuaikan durasi &amp; gerakan kamera sesuai tools yang kamu pakai.</p>
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" id="searchVid" placeholder="Cari prompt video, mis. 'drone', 'aksi'...">
+        </div>
+        <select class="filter-select" id="filterVid"></select>
+        <div class="section-progress"><b id="vidProgressText">0/20</b> sudah diuji</div>
+      </div>
+      <div class="card-grid" id="gridVid"></div>
+    </section>
+
+    <!-- ================= PROMPT LOGO PREMIUM ================= -->
+    <section class="view" id="view-prompt-logo">
+      <div class="eyebrow">Praktek</div>
+      <h1 class="page-title">20 Contoh Prompt Logo Premium</h1>
+      <p class="page-sub">Prompt siap pakai untuk desain logo kelas atas — cocok untuk Ideogram, Midjourney, DALL·E, atau Adobe Firefly. Salin, coba, lalu sesuaikan warna &amp; nama brand-mu.</p>
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" id="searchLogo" placeholder="Cari prompt logo, mis. 'monogram', 'emblem'...">
+        </div>
+        <select class="filter-select" id="filterLogo"></select>
+        <div class="section-progress"><b id="logoProgressText">0/20</b> sudah diuji</div>
+      </div>
+      <div class="card-grid" id="gridLogo"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   DATA
+============================================================ */
+const materi = [
+  {
+    title:"Formula Dasar Prompt Gambar AI",
+    steps:[
+      "Mulai dengan Subjek utama — siapa/apa yang ada di gambar.",
+      "Tambahkan Gaya visual — fotorealistik, anime, cat minyak, dsb.",
+      "Sebutkan Pencahayaan &amp; suasana — golden hour, studio light, dramatis.",
+      "Perjelas Komposisi — sudut kamera, jarak, framing.",
+      "Tutup dengan Detail teknis — lensa, resolusi, tingkat detail."
+    ],
+    example:"portrait of an old sailor, photorealistic, golden hour lighting, close-up shot, 85mm lens, ultra detailed skin texture, 8k"
+  },
+  {
+    title:"Cara Menulis Prompt Video AI",
+    steps:[
+      "Deskripsikan adegan &amp; aksi utama yang terjadi.",
+      "Tentukan gerakan kamera — pan, drone, tracking shot, static.",
+      "Sebutkan durasi/kecepatan gerak — slow motion, timelapse, real-time.",
+      "Tambahkan gaya sinematik — cinematic, documentary, dramatic lighting."
+    ],
+    example:"aerial drone shot over misty mountains at sunrise, slow cinematic camera movement, golden light, 4k"
+  },
+  {
+    title:"Menggunakan Negative Prompt agar Hasil Lebih Bersih",
+    steps:[
+      "Negative prompt memberi tahu AI apa yang harus dihindari.",
+      "Gunakan untuk kualitas: hindari blurry, low quality, distorted, extra limbs.",
+      "Gunakan untuk gaya: hindari cartoon jika ingin hasil fotorealistik.",
+      "Simpan daftar negative prompt standar untuk dipakai berulang."
+    ],
+    example:"Negative prompt: blurry, low quality, distorted face, extra fingers, watermark, oversaturated"
+  },
+  {
+    title:"Menjaga Konsistensi Karakter Antar Gambar",
+    steps:[
+      "Deskripsikan ciri fisik secara konsisten di setiap prompt (rambut, pakaian, warna mata).",
+      "Gunakan seed number yang sama jika tools mendukung.",
+      "Manfaatkan fitur image reference / character reference bila tersedia.",
+      "Ubah hanya latar &amp; pose, jangan ubah deskripsi karakter inti."
+    ],
+    example:"same character: young woman, short black hair, red jacket, green eyes — now shown walking in a busy street market"
+  },
+  {
+    title:"Memilih Aspect Ratio &amp; Resolusi yang Tepat",
+    steps:[
+      "Gunakan 16:9 untuk konten landscape/YouTube, 9:16 untuk konten vertikal.",
+      "Gunakan 1:1 untuk feed media sosial atau produk katalog.",
+      "Tambahkan parameter aspect ratio di akhir prompt (contoh --ar 16:9).",
+      "Sesuaikan resolusi dengan kebutuhan output akhir (cetak vs digital)."
+    ],
+    example:"cinematic landscape of a desert canyon at sunset, ultra detailed --ar 16:9"
+  },
+  {
+    title:"Iterasi Prompt: Teknik Refining Bertahap",
+    steps:[
+      "Mulai dari prompt sederhana, lihat hasil pertama.",
+      "Tambahkan satu detail baru per iterasi (pencahayaan, lalu komposisi, lalu gaya).",
+      "Bandingkan versi-versi hasil untuk menemukan kombinasi terbaik.",
+      "Simpan prompt versi terbaik sebagai template untuk proyek berikutnya."
+    ],
+    example:"v1: a cat on a windowsill → v2: + soft morning light → v3: + shallow depth of field, photorealistic"
+  },
+  {
+    title:"5 Kesalahan Umum Saat Membuat Prompt",
+    steps:[
+      "Terlalu singkat — AI tidak punya cukup konteks untuk hasil detail.",
+      "Terlalu banyak instruksi bertentangan dalam satu prompt.",
+      "Lupa menyebutkan gaya visual, sehingga hasil acak/tidak konsisten.",
+      "Tidak memakai negative prompt sehingga muncul artefak visual.",
+      "Tidak melakukan iterasi — langsung puas dengan hasil pertama."
+    ],
+    example:"Kurang baik: 'gambar kucing bagus' → Lebih baik: 'realistic photo of a fluffy orange cat sitting on a windowsill, soft daylight, shallow depth of field'"
+  },
+  {
+    title:"Menggabungkan Prompt Gambar + Video untuk Konten Konsisten",
+    steps:[
+      "Buat dulu gambar karakter/produk dengan prompt gambar yang detail.",
+      "Gunakan gambar tersebut sebagai reference/first-frame di tools video AI.",
+      "Tulis prompt video yang melanjutkan gerakan dari gambar tadi.",
+      "Jaga deskripsi gaya visual tetap sama antara prompt gambar &amp; video."
+    ],
+    example:"Gambar: 'product shot of a ceramic mug on wood table' → Video: 'slow 360 rotation of the same ceramic mug, studio lighting, smooth camera move'"
+  }
+];
+
+const imagePrompts = [
+  {title:"Potret Cinematic Golden Hour", cat:"Potret", tool:"Midjourney v6 · DALL·E 3",
+   prompt:"cinematic portrait of a young woman with freckles, golden hour lighting, shallow depth of field, 85mm lens, soft bokeh background, warm tones, photorealistic, ultra detailed skin texture",
+   tip:"Sebutkan jenis lensa &amp; waktu pencahayaan spesifik agar hasil lebih fotorealistik."},
+  {title:"Lanskap Pulau Melayang Fantasi", cat:"Sci-Fi & Fantasi", tool:"Midjourney v6 · Leonardo AI",
+   prompt:"epic fantasy landscape, floating islands with waterfalls, dramatic clouds, sunset lighting, matte painting style, highly detailed, 8k, trending on artstation",
+   tip:"Kata 'matte painting' &amp; 'artstation' membantu mengarahkan gaya ilustrasi digital premium."},
+  {title:"Foto Produk Parfum Minimalis", cat:"Produk & Komersial", tool:"DALL·E 3 · Midjourney",
+   prompt:"minimalist product photography of a matte black perfume bottle on a marble pedestal, soft studio lighting, clean white background, high-end commercial photography, sharp focus",
+   tip:"Untuk foto produk, selalu sebutkan jenis latar &amp; pencahayaan studio agar hasil rapi."},
+  {title:"Karakter Anime Prajurit Wanita", cat:"Karakter & Anime", tool:"Midjourney (niji) · Stable Diffusion",
+   prompt:"anime style character design, girl warrior with silver armor and blue cape, dynamic pose, cel shading, vibrant colors, studio ghibli inspired background",
+   tip:"Mode 'niji' di Midjourney lebih akurat untuk gaya anime dibanding mode default."},
+  {title:"Jalanan Kota Cyberpunk Malam", cat:"Sci-Fi & Fantasi", tool:"Midjourney v6 · Stable Diffusion XL",
+   prompt:"cyberpunk city street at night, neon signs reflecting on wet pavement, flying cars, dense fog, blade runner aesthetic, cinematic wide shot, ultra detailed",
+   tip:"Referensi film ('blade runner aesthetic') efektif memandu mood &amp; palet warna."},
+  {title:"Makro Embun di Sarang Laba-laba", cat:"Lanskap & Alam", tool:"DALL·E 3 · Midjourney",
+   prompt:"macro photography of a dew drop on a spider web, morning sunlight refracting, extreme close up, bokeh background, high detail, natural colors",
+   tip:"Kata 'macro photography' &amp; 'extreme close up' penting untuk hasil detail super dekat."},
+  {title:"Gedung Arsitektur Futuristik Hijau", cat:"Arsitektur & Interior", tool:"Midjourney v6",
+   prompt:"futuristic sustainable architecture, glass and greenery skyscraper, biophilic design, daylight, wide angle, architectural photography style, ultra realistic",
+   tip:"Istilah 'biophilic design' membantu AI memahami konsep bangunan ramah lingkungan."},
+  {title:"Foto Editorial Roti Sourdough", cat:"Produk & Komersial", tool:"DALL·E 3 · Midjourney",
+   prompt:"editorial food photography of a rustic sourdough bread on wooden table, natural window light, flour dust in air, shallow depth of field, warm color grading",
+   tip:"Detail kecil seperti 'flour dust in air' menambah kesan hidup pada foto makanan."},
+  {title:"Seni Abstrak Fluid Gold-Blue", cat:"Seni & Ilustrasi", tool:"Midjourney v6 · Leonardo AI",
+   prompt:"abstract fluid art, swirling gold and deep blue colors, marble texture, high contrast, macro detail, luxury aesthetic",
+   tip:"Cocok untuk cover, wallpaper, atau elemen desain — coba variasikan warnanya."},
+  {title:"Lukisan Cat Minyak Nelayan Tua", cat:"Seni & Ilustrasi", tool:"Midjourney v6 · Stable Diffusion",
+   prompt:"oil painting portrait of an elderly fisherman, rembrandt lighting, thick brush strokes, warm earthy palette, classical realism style",
+   tip:"'Rembrandt lighting' adalah istilah pencahayaan klasik yang sangat dikenali AI."},
+  {title:"Ilustrasi Watercolor Desa", cat:"Seni & Ilustrasi", tool:"DALL·E 3 · Midjourney",
+   prompt:"watercolor illustration of a quiet countryside village, soft pastel colors, loose brush strokes, paper texture visible, children's book style",
+   tip:"Menyebut 'paper texture visible' membuat hasil terasa seperti cat air asli."},
+  {title:"Logo Minimalis Kedai Kopi", cat:"Produk & Komersial", tool:"DALL·E 3 · Midjourney",
+   prompt:"minimalist logo design for a coffee shop, line art of a coffee bean and mountain, monochrome, vector style, flat design, white background",
+   tip:"Untuk logo, gunakan kata 'vector style' &amp; 'flat design' supaya hasil bersih dan scalable."},
+  {title:"Ilustrasi Isometrik Ruang Kerja", cat:"Seni & Ilustrasi", tool:"Midjourney v6",
+   prompt:"isometric illustration of a cozy home office, pastel color palette, clean vector shapes, soft shadows, flat design style",
+   tip:"Gaya isometrik populer untuk ilustrasi produk digital &amp; onboarding aplikasi."},
+  {title:"Potret Vintage Film 1970an", cat:"Potret", tool:"Midjourney v6 · Stable Diffusion",
+   prompt:"vintage 1970s film photograph portrait, grainy texture, warm faded colors, soft focus, retro fashion styling, kodachrome film look",
+   tip:"'Kodachrome film look' memberi nuansa warna khas foto analog jadul."},
+  {title:"Editorial Fashion Gaun Avant-garde", cat:"Fashion & Editorial", tool:"Midjourney v6 · DALL·E 3",
+   prompt:"high fashion editorial photography, model wearing avant-garde silk gown, dramatic studio lighting, vogue magazine style, sharp shadows, bold composition",
+   tip:"Referensi 'vogue magazine style' membantu arahkan pose &amp; pencahayaan dramatis."},
+  {title:"Kokpit Pesawat Luar Angkasa", cat:"Sci-Fi & Fantasi", tool:"Midjourney v6 · Leonardo AI",
+   prompt:"science fiction spaceship interior, cockpit with holographic control panels, blue ambient lighting, cinematic composition, ultra detailed sci-fi concept art",
+   tip:"Cocok untuk concept art game/film — tambahkan nama karakter untuk variasi adegan."},
+  {title:"Macan Tutul Salju Close-up", cat:"Lanskap & Alam", tool:"DALL·E 3 · Midjourney",
+   prompt:"hyperrealistic close up portrait of a snow leopard, piercing eyes, detailed fur texture, cold blue mountain background, wildlife photography style",
+   tip:"'Wildlife photography style' membantu hasil terlihat seperti jepretan National Geographic."},
+  {title:"Pola Geometris Art Deco", cat:"Seni & Ilustrasi", tool:"Midjourney v6 · DALL·E 3",
+   prompt:"seamless geometric pattern texture, art deco style, gold and black color scheme, symmetrical design, high resolution",
+   tip:"Kata 'seamless' penting supaya pola bisa diulang tanpa terlihat sambungannya."},
+  {title:"Interior Ruang Tamu Skandinavia", cat:"Arsitektur & Interior", tool:"Midjourney v6",
+   prompt:"minimalist Scandinavian living room interior, natural light, wood and linen textures, neutral color palette, architectural digest style photography",
+   tip:"Sebutkan jenis material (wood, linen) agar tekstur interior lebih realistis."},
+  {title:"Karakter Game 3D Prajurit Wanita", cat:"Karakter & Anime", tool:"Midjourney v6 · Leonardo AI",
+   prompt:"3D rendered game character concept art, futuristic female warrior, metallic armor with glowing blue accents, unreal engine render, studio lighting",
+   tip:"'Unreal engine render' adalah kata kunci populer untuk hasil bergaya 3D game modern."}
+];
+
+const videoPrompts = [
+  {title:"Drone Cinematic Pegunungan Berkabut", cat:"Sinematik & Drone", tool:"Runway Gen-3 · Kling 1.6",
+   prompt:"aerial drone shot flying over a misty mountain range at sunrise, slow cinematic camera movement, golden light, 4k, smooth motion",
+   tip:"Gerakan kamera 'slow' membuat hasil video lebih sinematik dan tidak terburu-buru."},
+  {title:"Iklan Produk Parfum Berputar", cat:"Produk & Komersial", tool:"Runway Gen-3",
+   prompt:"product commercial shot, perfume bottle rotating slowly on a reflective surface, dramatic studio lighting, smooth 360 rotation, high-end commercial style",
+   tip:"Sebutkan jenis gerakan objek (rotasi 360) agar hasil video terasa seperti iklan asli."},
+  {title:"Karakter Berjalan di Tokyo Hujan", cat:"Karakter & Aksi", tool:"Sora · Kling 1.6",
+   prompt:"photorealistic character walk cycle, woman walking through a rainy Tokyo street at night, neon reflections, cinematic tracking shot",
+   tip:"'Tracking shot' membuat kamera mengikuti subjek, cocok untuk adegan berjalan."},
+  {title:"Timelapse Persimpangan Kota", cat:"Sinematik & Drone", tool:"Pika 1.5 · Runway",
+   prompt:"timelapse of a busy city intersection from day to night, light trails from cars, clouds moving fast, cinematic color grading",
+   tip:"Kata 'timelapse' memberi sinyal jelas ke AI soal percepatan waktu dalam video."},
+  {title:"Kolibri Menghisap Nektar Slow-Motion", cat:"Alam & Dokumenter", tool:"Runway Gen-3",
+   prompt:"nature documentary style shot of a hummingbird feeding from a flower, slow motion, shallow depth of field, natural lighting",
+   tip:"'Slow motion' + 'shallow depth of field' menghasilkan nuansa dokumenter alam premium."},
+  {title:"Kejaran Mobil Terbang Sci-fi", cat:"Sci-Fi & Fantasi", tool:"Sora · Kling 1.6",
+   prompt:"sci-fi chase scene, futuristic hover car speeding through a neon city, dynamic camera movement, motion blur, cinematic lighting",
+   tip:"'Motion blur' menambah kesan kecepatan tinggi pada adegan kejar-kejaran."},
+  {title:"Kopi Panas Dituang, Uap Mengepul", cat:"Produk & Komersial", tool:"Pika 1.5 · Runway",
+   prompt:"close up video of hot coffee being poured into a cup, steam rising, warm morning light, slow motion, cozy atmosphere",
+   tip:"Detail sensorik seperti 'steam rising' membuat video produk terasa lebih hidup."},
+  {title:"Runway Show Gaun Sutra", cat:"Fashion & Editorial", tool:"Kling 1.6 · Runway",
+   prompt:"fashion video, model walking on a runway wearing a flowing silk dress, dramatic spotlight, slow motion fabric movement",
+   tip:"Sebutkan gerakan material kain agar tekstur kain terlihat bergerak natural."},
+  {title:"Motion Graphic Cairan Warna-warni", cat:"Motion Graphic", tool:"Runway Gen-3 · Pika",
+   prompt:"abstract motion graphics, colorful liquid shapes morphing smoothly, gradient colors, seamless loop, 4k",
+   tip:"'Seamless loop' penting jika video akan dipakai berulang tanpa jeda terlihat."},
+  {title:"Wawancara Gaya Profesional", cat:"Konten & Wawancara", tool:"Sora · Runway",
+   prompt:"professional interview style shot, person talking to camera in a modern office, soft lighting, subtle background blur, steady camera",
+   tip:"'Steady camera' menjaga video tetap stabil, cocok untuk konten talking-head."},
+  {title:"Adegan Aksi Anime Hutan Bambu", cat:"Karakter & Aksi", tool:"Kling 1.6",
+   prompt:"anime style action scene, sword fight between two warriors in a bamboo forest, dynamic camera angles, dramatic lighting",
+   tip:"Sebutkan gaya animasi (anime style) agar tools yang mendukung gaya ini merender sesuai."},
+  {title:"Stop Motion Rumah dari Tanah Liat", cat:"Motion Graphic", tool:"Runway Gen-3",
+   prompt:"stop motion animation of clay characters building a small house, colorful set, whimsical style, smooth frame transitions",
+   tip:"'Stop motion' &amp; 'whimsical style' memberi nuansa animasi buatan tangan yang khas."},
+  {title:"Aerial Kota Futuristik Senja", cat:"Sinematik & Drone", tool:"Sora · Kling 1.6",
+   prompt:"aerial cinematic shot of a futuristic city skyline at dusk, flying cars in the distance, warm sunset colors",
+   tip:"Kombinasikan 'aerial' dan waktu (dusk) untuk hasil establishing shot yang megah."},
+  {title:"Terumbu Karang Bawah Laut", cat:"Alam & Dokumenter", tool:"Runway Gen-3",
+   prompt:"underwater cinematic shot of a coral reef with colorful fish swimming, sunlight rays penetrating water, smooth camera glide",
+   tip:"'Sunlight rays penetrating water' menambah dimensi cahaya bawah laut yang realistis."},
+  {title:"Transisi Cuaca Cerah ke Badai", cat:"Alam & Dokumenter", tool:"Pika 1.5",
+   prompt:"time-lapse transition from a sunny day to a thunderstorm over a field, dramatic clouds rolling in, cinematic lighting change",
+   tip:"Deskripsikan perubahan kondisi secara bertahap agar transisi terlihat mulus."},
+  {title:"Pasar Abad Pertengahan", cat:"Sejarah & Budaya", tool:"Kling 1.6 · Sora",
+   prompt:"historical scene of a medieval marketplace, people trading goods, horses and carts, warm afternoon light, cinematic wide shot",
+   tip:"Sebutkan periode sejarah spesifik agar detail kostum &amp; properti lebih akurat."},
+  {title:"Pertunjukan Tari Kontemporer", cat:"Seni Pertunjukan", tool:"Sora · Runway",
+   prompt:"contemporary dance performance on stage, dramatic spotlight, flowing fabric costume, slow motion cinematic shot",
+   tip:"'Dramatic spotlight' membantu menonjolkan gerakan penari di tengah panggung gelap."},
+  {title:"Kejaran Mobil di Jalan Gurun", cat:"Karakter & Aksi", tool:"Runway Gen-3 · Kling",
+   prompt:"high speed car chase through a desert highway, dust trail, dynamic tracking camera, action movie style",
+   tip:"'Dust trail' menambah detail lingkungan yang membuat kecepatan terasa nyata."},
+  {title:"Bunga Mekar Morphing Halus", cat:"Motion Graphic", tool:"Pika 1.5 · Runway",
+   prompt:"smooth morphing transition of a flower blooming from bud to full bloom, macro shot, soft natural light, seamless loop",
+   tip:"Cocok dijadikan b-roll pendek untuk konten estetik atau intro video."},
+  {title:"Transisi Taman Kota Siang ke Malam", cat:"Sinematik & Drone", tool:"Kling 1.6 · Sora",
+   prompt:"seamless day to night transition of a city park, time-lapse style, stars appearing, streetlights turning on, cinematic color grade",
+   tip:"Detail kecil seperti lampu jalan menyala membuat transisi waktu lebih meyakinkan."}
+];
+
+const logoPrompts = [
+  {title:"Monogram Mewah Inisial \"AR\"", cat:"Monogram & Wordmark", tool:"Ideogram · Midjourney v6",
+   prompt:"luxury monogram logo design, elegant intertwined letters 'A' and 'R', gold foil texture, minimalist, vector style, black background, high-end fashion brand identity",
+   tip:"Sebutkan inisial spesifik agar AI fokus membentuk huruf, bukan simbol acak."},
+  {title:"Wordmark Modern Startup Teknologi", cat:"Monogram & Wordmark", tool:"Ideogram · DALL·E 3",
+   prompt:"modern wordmark logo for a tech startup, clean sans-serif typography, subtle gradient from blue to purple, minimalist, flat vector design, white background",
+   tip:"Ideogram paling akurat untuk logo berbasis teks/tipografi dibanding tools lain."},
+  {title:"Emblem Kedai Kopi Premium", cat:"Emblem & Badge", tool:"Midjourney v6 · Ideogram",
+   prompt:"premium emblem logo design for an artisan coffee roastery, circular badge with coffee bean and mountain icon, vintage hand-drawn line style, single color, vector",
+   tip:"Kata 'single color' &amp; 'vector' penting supaya logo mudah dicetak di berbagai media."},
+  {title:"Maskot Rubah untuk Brand Outdoor", cat:"Maskot & Karakter", tool:"Midjourney v6 · Leonardo AI",
+   prompt:"modern mascot logo design, minimalist geometric fox head, flat vector illustration, orange and dark green color palette, outdoor adventure brand identity",
+   tip:"Gaya 'geometric' membuat maskot terlihat modern, bukan kartun anak-anak."},
+  {title:"Logo Abstrak Elang &amp; Gunung", cat:"Abstrak & Negative Space", tool:"Midjourney v6 · Ideogram",
+   prompt:"abstract negative space logo design, eagle silhouette merged with mountain peak, minimalist single line, black and white, high-end vector branding",
+   tip:"Teknik negative space jadi favorit logo premium karena terasa cerdas &amp; unik."},
+  {title:"Logo Perhiasan dengan Ornamen Mewah", cat:"Mewah & Ornamen", tool:"Midjourney v6 · DALL·E 3",
+   prompt:"luxury jewelry brand logo, ornate flourish frame around initials, gold and black color scheme, art deco style, elegant vector illustration",
+   tip:"'Art deco' &amp; 'flourish frame' memberi kesan mewah klasik ala perhiasan high-end."},
+  {title:"Logo Fintech Modern Minimalis", cat:"Tech & Fintech", tool:"Ideogram · Midjourney v6",
+   prompt:"modern fintech logo design, abstract geometric shield icon, gradient blue to teal, clean minimalist vector style, professional branding",
+   tip:"Ikon perisai (shield) sering dipakai fintech untuk memberi kesan aman &amp; terpercaya."},
+  {title:"Crest Heraldik Brand Fashion Klasik", cat:"Emblem & Badge", tool:"Midjourney v6",
+   prompt:"heraldic crest logo design for a classic menswear brand, shield with laurel wreath and lion motif, monochrome, engraved line art style, vector",
+   tip:"Gaya heraldik cocok untuk brand yang ingin kesan warisan &amp; prestise."},
+  {title:"Logo Line Art Yoga Studio", cat:"Tipografi & Line Art", tool:"Ideogram · Midjourney v6",
+   prompt:"single continuous line art logo, minimalist lotus flower silhouette, elegant thin stroke, black on cream background, wellness brand identity",
+   tip:"'Single continuous line' menghasilkan bentuk simpel yang elegan &amp; mudah diingat."},
+  {title:"Logo 3D Modern Brand Gaming", cat:"Tech & Fintech", tool:"Midjourney v6 · Leonardo AI",
+   prompt:"modern 3D logo design, glossy metallic letter 'G' with neon blue glow, dark background, futuristic gaming brand identity, high detail render",
+   tip:"Efek glow &amp; metallic cocok untuk brand gaming/esport yang ingin kesan techy."},
+  {title:"Logo Geometris Firma Arsitektur", cat:"Abstrak & Negative Space", tool:"Midjourney v6 · Ideogram",
+   prompt:"geometric abstract logo design for an architecture firm, interlocking triangular shapes forming a building silhouette, monochrome navy, minimalist vector",
+   tip:"Bentuk geometris berulang memberi kesan presisi &amp; profesionalisme arsitektur."},
+  {title:"Logo Botanikal Brand Skincare", cat:"Nature & Lifestyle", tool:"Midjourney v6 · DALL·E 3",
+   prompt:"elegant botanical logo design, delicate line illustration of a blooming flower, soft sage green color, minimalist skincare brand identity, vector",
+   tip:"Warna sage green &amp; garis halus cocok untuk brand skincare/organik yang lembut."},
+  {title:"Logo Gradient Aplikasi Musik", cat:"Tech & Fintech", tool:"Ideogram · Midjourney v6",
+   prompt:"modern gradient logo design, abstract soundwave icon, vibrant purple to pink gradient, rounded flat vector style, app icon branding",
+   tip:"Gradient cerah &amp; bentuk membulat cocok untuk logo aplikasi mobile masa kini."},
+  {title:"Logo Vintage Badge Barbershop", cat:"Emblem & Badge", tool:"Midjourney v6",
+   prompt:"vintage badge logo design for a classic barbershop, circular emblem with scissors and comb icon, distressed texture, sepia tone, retro americana style",
+   tip:"'Distressed texture' &amp; sepia tone memberi kesan logo sudah ada sejak lama."},
+  {title:"Logo Tipografi Kreatif Studio Desain", cat:"Tipografi & Line Art", tool:"Ideogram · DALL·E 3",
+   prompt:"creative typographic logo design, custom lettering with negative space icon hidden inside letterforms, bold sans-serif, minimalist black and white",
+   tip:"Ikon tersembunyi di dalam huruf jadi ciri khas logo studio desain kreatif."},
+  {title:"Logo Elegan Restoran Fine Dining", cat:"Mewah & Ornamen", tool:"Midjourney v6 · Ideogram",
+   prompt:"elegant fine dining restaurant logo, thin serif typography with minimalist fork and knife icon, gold on deep burgundy background, luxury vector design",
+   tip:"Font serif tipis + warna burgundy-gold identik dengan kesan restoran mewah."},
+  {title:"Logo Abstrak Perusahaan Energi Terbarukan", cat:"Nature & Lifestyle", tool:"Midjourney v6 · DALL·E 3",
+   prompt:"abstract modern logo design for a renewable energy company, stylized leaf merging with lightning bolt, gradient green to yellow, clean vector style",
+   tip:"Gabungan daun &amp; petir menyampaikan pesan 'energi bersih' secara visual."},
+  {title:"Logo Monokrom Brand Streetwear", cat:"Tipografi & Line Art", tool:"Ideogram · Midjourney v6",
+   prompt:"bold monochrome logo design for a streetwear fashion brand, graffiti-inspired custom typography, high contrast black and white, urban aesthetic",
+   tip:"Kontras tinggi hitam-putih membuat logo streetwear terlihat berani &amp; mudah dikenali."},
+  {title:"Logo Elegan Butik Bunga", cat:"Nature & Lifestyle", tool:"Midjourney v6 · DALL·E 3",
+   prompt:"elegant floral boutique logo, fine line illustration of a rose with delicate script typography, blush pink and gold accent, luxury vector branding",
+   tip:"Script typography memberi sentuhan feminin &amp; mewah untuk brand bunga/butik."},
+  {title:"Logo Minimalis Perusahaan Real Estate", cat:"Abstrak & Negative Space", tool:"Ideogram · Midjourney v6",
+   prompt:"minimalist real estate logo design, abstract geometric house icon formed from clean line strokes, navy blue and gold, professional corporate branding, vector",
+   tip:"Warna navy &amp; gold sering dipakai industri properti untuk kesan terpercaya &amp; mapan."}
+];
+
+/* ============================================================
+   STATE
+============================================================ */
+const state = {
+  materiDone: new Set(),
+  imgTested: new Set(),
+  vidTested: new Set(),
+  logoTested: new Set()
+};
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+const navItems = document.querySelectorAll('.nav-item');
+const views = document.querySelectorAll('.view');
+function goTo(target){
+  navItems.forEach(n => n.classList.toggle('active', n.dataset.target === target));
+  views.forEach(v => v.classList.toggle('active', v.id === 'view-' + target));
+  document.getElementById('sidebar').classList.remove('open');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+navItems.forEach(item => item.addEventListener('click', () => goTo(item.dataset.target)));
+document.querySelectorAll('.goto-btn').forEach(btn => btn.addEventListener('click', () => goTo(btn.dataset.target)));
+
+document.getElementById('menuToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+/* ============================================================
+   COPY TO CLIPBOARD
+============================================================ */
+function copyText(text, btnEl){
+  const done = () => {
+    const original = btnEl.innerHTML;
+    btnEl.classList.add('copied');
+    btnEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Tersalin!';
+    setTimeout(() => { btnEl.classList.remove('copied'); btnEl.innerHTML = original; }, 1600);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, cb){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+  cb();
+}
+
+/* ============================================================
+   RENDER MATERI
+============================================================ */
+const materiList = document.getElementById('materiList');
+materi.forEach((m, i) => {
+  const item = document.createElement('div');
+  item.className = 'materi-item';
+  item.innerHTML = `
+    <div class="materi-head">
+      <div class="materi-check" data-idx="${i}">✓</div>
+      <div class="materi-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="materi-title">${m.title}</div>
+      <div class="materi-caret">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </div>
+    </div>
+    <div class="materi-body">
+      <div class="materi-body-in">
+        <ol>${m.steps.map(s => `<li>${s}</li>`).join('')}</ol>
+        <div class="example"><b>Contoh:</b> ${m.example}</div>
+      </div>
+    </div>
+  `;
+  item.querySelector('.materi-head').addEventListener('click', (e) => {
+    if(e.target.closest('.materi-check')) return;
+    item.classList.toggle('open');
+  });
+  item.querySelector('.materi-check').addEventListener('click', () => {
+    if(state.materiDone.has(i)){ state.materiDone.delete(i); }
+    else { state.materiDone.add(i); }
+    item.querySelector('.materi-check').classList.toggle('done');
+    updateDashboard();
+  });
+  materiList.appendChild(item);
+});
+
+/* ============================================================
+   RENDER PROMPT CARDS (generic)
+============================================================ */
+function buildFilterOptions(selectEl, dataArr){
+  const cats = ['Semua Kategori', ...new Set(dataArr.map(d => d.cat))];
+  selectEl.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function renderCards(gridEl, dataArr, type, testedSet, searchVal, filterVal){
+  gridEl.innerHTML = '';
+  const q = (searchVal || '').toLowerCase();
+  let visibleCount = 0;
+  dataArr.forEach((d, i) => {
+    const matchesSearch = !q || d.title.toLowerCase().includes(q) || d.prompt.toLowerCase().includes(q) || d.cat.toLowerCase().includes(q);
+    const matchesFilter = !filterVal || filterVal === 'Semua Kategori' || d.cat === filterVal;
+    if(!matchesSearch || !matchesFilter) return;
+    visibleCount++;
+    const isTested = testedSet.has(i);
+    const card = document.createElement('div');
+    card.className = 'prompt-card' + (isTested ? ' tested' : '');
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-title-wrap">
+          <div class="card-no">${String(i+1).padStart(2,'0')}</div>
+          <div>
+            <div class="card-title">${d.title}</div>
+            <span class="card-tag ${type}">${d.cat}</span>
+          </div>
+        </div>
+      </div>
+      <div class="prompt-box">${d.prompt}</div>
+      <div class="card-tools">Cocok untuk: <b>${d.tool}</b></div>
+      <div class="card-tip">${d.tip}</div>
+      <div class="card-actions">
+        <button class="btn copy-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          Salin Prompt
+        </button>
+        <button class="btn mark ${isTested ? 'on' : ''}">
+          ${isTested ? '✓ Teruji' : 'Tandai Teruji'}
+        </button>
+      </div>
+    `;
+    card.querySelector('.copy-btn').addEventListener('click', (e) => copyText(d.prompt, e.currentTarget));
+    card.querySelector('.mark').addEventListener('click', (e) => {
+      if(testedSet.has(i)){ testedSet.delete(i); } else { testedSet.add(i); }
+      card.classList.toggle('tested');
+      e.currentTarget.classList.toggle('on');
+      e.currentTarget.innerHTML = testedSet.has(i) ? '✓ Teruji' : 'Tandai Teruji';
+      updateDashboard();
+    });
+    gridEl.appendChild(card);
+  });
+  if(visibleCount === 0){
+    gridEl.innerHTML = `<div class="empty-state">Tidak ada prompt yang cocok dengan pencarian/filter ini.</div>`;
+  }
+}
+
+/* ---- Image section wiring ---- */
+const gridImg = document.getElementById('gridImg');
+const searchImg = document.getElementById('searchImg');
+const filterImg = document.getElementById('filterImg');
+buildFilterOptions(filterImg, imagePrompts);
+function refreshImg(){ renderCards(gridImg, imagePrompts, 'img', state.imgTested, searchImg.value, filterImg.value); }
+searchImg.addEventListener('input', refreshImg);
+filterImg.addEventListener('change', refreshImg);
+
+/* ---- Video section wiring ---- */
+const gridVid = document.getElementById('gridVid');
+const searchVid = document.getElementById('searchVid');
+const filterVid = document.getElementById('filterVid');
+buildFilterOptions(filterVid, videoPrompts);
+function refreshVid(){ renderCards(gridVid, videoPrompts, 'vid', state.vidTested, searchVid.value, filterVid.value); }
+searchVid.addEventListener('input', refreshVid);
+filterVid.addEventListener('change', refreshVid);
+
+/* ---- Logo section wiring ---- */
+const gridLogo = document.getElementById('gridLogo');
+const searchLogo = document.getElementById('searchLogo');
+const filterLogo = document.getElementById('filterLogo');
+buildFilterOptions(filterLogo, logoPrompts);
+function refreshLogo(){ renderCards(gridLogo, logoPrompts, 'logo', state.logoTested, searchLogo.value, filterLogo.value); }
+searchLogo.addEventListener('input', refreshLogo);
+filterLogo.addEventListener('change', refreshLogo);
+
+/* ============================================================
+   DASHBOARD UPDATER
+============================================================ */
+function updateDashboard(){
+  const totalTested = state.imgTested.size + state.vidTested.size + state.logoTested.size;
+  document.getElementById('dashTestedNum').textContent = `${totalTested}/60`;
+  document.getElementById('imgTestedBadge').textContent = `${state.imgTested.size}/20`;
+  document.getElementById('vidTestedBadge').textContent = `${state.vidTested.size}/20`;
+  document.getElementById('logoTestedBadge').textContent = `${state.logoTested.size}/20`;
+  document.getElementById('materiDoneBadge').textContent = `${state.materiDone.size}/8`;
+  document.getElementById('imgProgressText').textContent = `${state.imgTested.size}/20`;
+  document.getElementById('vidProgressText').textContent = `${state.vidTested.size}/20`;
+  document.getElementById('logoProgressText').textContent = `${state.logoTested.size}/20`;
+
+  const totalUnits = 68; // 60 prompts + 8 materi
+  const doneUnits = totalTested + state.materiDone.size;
+  const pct = Math.round((doneUnits / totalUnits) * 100);
+  document.getElementById('progressRing').style.setProperty('--pct', pct);
+  document.getElementById('ringPct').textContent = pct + '%';
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+refreshImg();
+refreshVid();
+refreshLogo();
+updateDashboard();
+
+/* ============================================================
+   PWA: SERVICE WORKER REGISTRATION
+============================================================ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(err => {
+      console.log('Service worker gagal didaftarkan:', err);
+    });
+  });
+}
+
+/* Tombol "Install App" opsional — muncul otomatis saat browser support */
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const installBtn = document.getElementById('installAppBtn');
+  if(installBtn) installBtn.style.display = 'flex';
+});
+function triggerInstall(){
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.finally(() => {
+    deferredPrompt = null;
+    const installBtn = document.getElementById('installAppBtn');
+    if(installBtn) installBtn.style.display = 'none';
+  });
+}
+</script>
+</body>
+</html>
